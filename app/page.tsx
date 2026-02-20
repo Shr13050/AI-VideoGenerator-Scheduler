@@ -18,6 +18,13 @@ import {
   Play
 } from "lucide-react";
 import Image from "next/image";
+import { 
+  SignedIn, 
+  SignedOut, 
+  UserButton,
+  SignInButton,
+  SignUpButton
+} from "@clerk/nextjs";
 
 export default function Home() {
   const containerVariants = {
@@ -55,12 +62,32 @@ export default function Home() {
           <div className="hidden items-center gap-8 md:flex">
             <a href="#features" className="text-sm font-medium text-zinc-400 transition-colors hover:text-white">Features</a>
             <a href="#platforms" className="text-sm font-medium text-zinc-400 transition-colors hover:text-white">Platforms</a>
+            <SignedIn>
+              <a href="/dashboard" className="text-sm font-medium text-zinc-400 transition-colors hover:text-white">Dashboard</a>
+            </SignedIn>
+            <SignedOut>
+              <SignInButton mode="modal">
+                <button className="text-sm font-medium text-zinc-400 transition-colors hover:text-white cursor-pointer">Dashboard</button>
+              </SignInButton>
+            </SignedOut>
             <a href="#pricing" className="text-sm font-medium text-zinc-400 transition-colors hover:text-white">Pricing</a>
           </div>
 
           <div className="flex items-center gap-4">
-            <Button variant="ghost" className="text-zinc-400 hover:text-white">Sign In</Button>
-            <Button className="bg-blue-600 hover:bg-blue-700">Get Started</Button>
+            <SignedOut>
+              <SignInButton mode="modal">
+                <Button variant="ghost" className="text-zinc-400 hover:text-white">Sign In</Button>
+              </SignInButton>
+              <SignUpButton mode="modal">
+                <Button className="bg-blue-600 hover:bg-blue-700">Get Started</Button>
+              </SignUpButton>
+            </SignedOut>
+            <SignedIn>
+              <Button variant="ghost" className="text-zinc-400 hover:text-white" asChild>
+                <a href="/dashboard">Dashboard</a>
+              </Button>
+              <UserButton afterSignOutUrl="/" />
+            </SignedIn>
           </div>
         </div>
       </nav>
@@ -89,9 +116,18 @@ export default function Home() {
           </motion.p>
           
           <motion.div variants={itemVariants} className="flex flex-col gap-4 sm:flex-row">
-            <Button size="lg" className="h-14 px-8 text-lg bg-blue-600 hover:bg-blue-700">
-              Start Generating for Free <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
+            <SignedIn>
+              <Button size="lg" className="h-14 px-8 text-lg bg-blue-600 hover:bg-blue-700" asChild>
+                <a href="/dashboard">Go to Dashboard <ArrowRight className="ml-2 h-5 w-5" /></a>
+              </Button>
+            </SignedIn>
+            <SignedOut>
+              <SignInButton mode="modal">
+                <Button size="lg" className="h-14 px-8 text-lg bg-blue-600 hover:bg-blue-700">
+                  Start Generating for Free <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </SignInButton>
+            </SignedOut>
             <Button size="lg" variant="outline" className="h-14 px-8 text-lg border-white/10 bg-white/5 hover:bg-white/10">
               Watch Demo <Play className="ml-2 h-5 w-4 fill-white" />
             </Button>
