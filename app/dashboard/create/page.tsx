@@ -1,6 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import { 
   ChevronRight, 
   ChevronLeft,
@@ -193,6 +195,25 @@ const AVAILABLE_NICHES = [
 ];
 
 export default function CreateVideoPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex-1 flex items-center justify-center min-h-screen bg-zinc-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 border-4 border-indigo-600/30 border-t-indigo-600 rounded-full animate-spin" />
+          <p className="text-zinc-500 font-medium animate-pulse">Loading editor...</p>
+        </div>
+      </div>
+    }>
+      <CreateVideoContent />
+    </Suspense>
+  );
+}
+
+function CreateVideoContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const seriesId = searchParams.get("id");
+
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormState>({
     niche: "",
@@ -209,10 +230,76 @@ export default function CreateVideoPage() {
   });
   const [playingVoice, setPlayingVoice] = useState<string | null>(null);
   const [audioPlayer, setAudioPlayer] = useState<HTMLAudioElement | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(!!seriesId);
 
-  const handleNext = () => {
+  useEffect(() => {
+    if (seriesId) {
+      fetchSeriesData();
+    }
+  }, [seriesId]);
+
+  const fetchSeriesData = async () => {
+    try {
+      const response = await fetch(`/api/get-series?id=${seriesId}`);
+      if (!response.ok) throw new Error("Failed to fetch series");
+      const data = await response.json();
+      
+      setFormData({
+        niche: data.niche,
+        nicheType: data.niche_type,
+        language: data.language,
+        voice: data.voice,
+        music: data.music || [],
+        videoStyle: data.video_style,
+        captionStyle: data.caption_style,
+        seriesName: data.series_name,
+        duration: data.duration,
+        platforms: data.platforms || [],
+        publishDate: new Date(data.publish_date),
+      });
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to load series data");
+    } finally {
+      setIsFetching(false);
+    }
+  };
+
+  const handleNext = async () => {
     if (currentStep < STEPS.length) {
       setCurrentStep(prev => prev + 1);
+    } else {
+      // Handle the Schedule action on the final step
+      await onSchedule();
+    }
+  };
+
+  const onSchedule = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/create-series", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...formData,
+          id: seriesId // Pass the ID if we are updating
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to schedule series");
+      }
+
+      toast.success(seriesId ? "Series updated successfully!" : "Series scheduled successfully!");
+      router.push("/dashboard");
+    } catch (error) {
+      console.error(error);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -964,15 +1051,33 @@ export default function CreateVideoPage() {
 
             <Button 
               onClick={handleNext}
-              disabled={!isStepValid()}
-              className="bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl px-10 py-6 font-bold shadow-lg shadow-zinc-200 transition-all active:scale-[0.98] group"
+              disabled={!isStepValid() || isLoading}
+              className="bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl px-10 py-6 font-bold shadow-lg shadow-zinc-200 transition-all active:scale-[0.98] group relative"
             >
-              {currentStep === STEPS.length ? "Schedule" : "Continue"}
-              <ChevronRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              {isLoading ? (
+                <div className="flex items-center gap-2">
+                  <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Processing...
+                </div>
+              ) : (
+                <>
+                  {currentStep === STEPS.length ? (seriesId ? "Update Series" : "Schedule") : "Continue"}
+                  <ChevronRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
             </Button>
           </div>
         </div>
       </main>
+
+      {isFetching && (
+        <div className="fixed inset-0 bg-white/60 backdrop-blur-xs z-50 flex items-center justify-center">
+          <div className="bg-white p-8 rounded-3xl shadow-2xl border border-zinc-100 flex flex-col items-center gap-4">
+            <div className="h-12 w-12 border-4 border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin" />
+            <p className="text-zinc-600 font-bold">Resuming your series...</p>
+          </div>
+        </div>
+      )}
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {
