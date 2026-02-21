@@ -84,14 +84,16 @@ export function Sidebar() {
 
       {/* Create New Series Button */}
       <div className="px-4 py-6">
-        <Button 
-          className="w-full justify-start gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 transition-all hover:scale-[1.02] active:scale-[0.98] rounded-xl h-11"
-        >
-          <div className="flex h-5 w-5 items-center justify-center rounded-md bg-white/20">
-            <Plus className="h-3.5 w-3.5" />
-          </div>
-          <span className="font-semibold text-sm">New Series</span>
-        </Button>
+        <Link href="/dashboard/create">
+          <Button 
+            className="w-full justify-start gap-2 bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 transition-all hover:scale-[1.02] active:scale-[0.98] rounded-xl h-11"
+          >
+            <div className="flex h-5 w-5 items-center justify-center rounded-md bg-white/20">
+              <Plus className="h-3.5 w-3.5" />
+            </div>
+            <span className="font-semibold text-sm">New Series</span>
+          </Button>
+        </Link>
       </div>
 
       {/* Navigation */}
